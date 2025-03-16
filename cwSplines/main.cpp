@@ -1,7 +1,39 @@
-#include <iostream >
+#include <iostream>
+#include <fstream>
 #include <vector>
 
 using namespace std;
+
+vector<vector<double>> inputMatrix(string fileName) {
+	ifstream file(fileName);
+
+	int rows, cols;
+	file >> rows;
+	file >> cols;
+
+	vector<vector<double>> matrix(rows, vector<double>(cols));
+
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			file >> matrix[i][j];
+		}
+	}
+	return matrix;
+}
+
+vector<double> inputVector(string fileName) {
+	ifstream file(fileName);
+
+	int size;
+	file >> size;
+
+	vector<double> B(size);
+
+	for (int i = 0; i < size; i++) {
+		file >> B[i];
+	}
+	return B;
+}
 
 double function(double x) {
 	return x;
@@ -38,7 +70,7 @@ void quadraticSpline(vector<double> x, vector<double> y) {
 	}
 }
 
-void LU(vector<vector<double>> u) {
+void LU(vector<vector<double>> u, vector<double> b) {
 	int nRows = u.size();
 	int nCols = u[0].size();
 	//создаем матрицу L имеющую только 2 диагонали
@@ -57,12 +89,11 @@ void LU(vector<vector<double>> u) {
 	}
 	
 	// прямой ход
-	vector<double> b = { 1, 1, 1, 1, 1, 1 };
 	vector<double> y(nRows);
 
 	y[0] = b[0] / l[0][1];
 	for (int i = 1; i < nRows; i++) {
-		y[i] = (b[i] - l[i][0] * y[i - 1]) / l[i][1];
+		y[i] = b[i] - l[i][0] * y[i - 1];
 	}
 
 	// обратный ход
@@ -70,38 +101,39 @@ void LU(vector<vector<double>> u) {
 
 	x[nRows - 1] = y[nRows - 1] / u[nRows - 1][1];
 	x[nRows - 2] = (y[nRows - 2] - u[nRows - 2][2] * x[nRows - 1]) / u[nRows - 2][1];
-	for (int i = nRows - 3; i > -1; i--) {
-		x[i] = (y[i] - (u[i][2] * x[i + 1] + u[i][3] * x[i + 2])) / u[i][1];
+	x[nRows - 3] = (y[nRows - 3] - u[nRows - 3][2] * x[nRows - 2] - u[nRows - 3][3] * x[nRows - 1]) / u[nRows - 3][1];
+	int sum;
+	for (int i = nRows - 4; i > -1; i--) {
+		x[i] = (y[i] - u[i][2] * x[i + 1] - u[i][3] * x[i + 2] - u[i][4] * x[i + 3]) / u[i][1];
 	}
 
-	//cout << "U" << endl;
-	//for (int i = 0; i < nRows; i++) {
-	//	for (int j = 0; j < nCols; j++) {
-	//		cout << u[i][j] << " ";
-	//	}
-	//	cout << endl;
-	//}
-	//cout << endl << "L" << endl;
-	//for (int i = 0; i < nRows; i++) {
-	//	for (int j = 0; j < 2; j++) {
-	//		cout << l[i][j] << " ";
-	//	}
-	//	cout << endl;
-	//}
-	//cout << endl << "y" << endl;
-	//for (int i = 0; i < nRows; i++) {
-	//	cout << y[i] << " ";
-	//}
-	//cout << endl << "x" << endl;
-	//for (int i = 0; i < nRows; i++) {
-	//	cout << x[i] << " ";
-	//}
+	cout << "U" << endl;
+	for (int i = 0; i < nRows; i++) {
+		for (int j = 0; j < nCols; j++) {
+			cout << u[i][j] << " ";
+		}
+		cout << endl;
+	}
+	cout << endl << "L" << endl;
+	for (int i = 0; i < nRows; i++) {
+		for (int j = 0; j < 2; j++) {
+			cout << l[i][j] << " ";
+		}
+		cout << endl;
+	}
+	cout << endl << "y" << endl;
+	for (int i = 0; i < nRows; i++) {
+		cout << y[i] << " ";
+	}
+	cout << endl << "x" << endl;
+	for (int i = 0; i < nRows; i++) {
+		cout << x[i] << " ";
+	}
 }
 
 int main() {
 	setlocale(LC_ALL, "Russian");
-	vector<vector<double>> u = { {0, 4, 15, 0}, {1, 5, 11, 0}, {0, 2, 0, 9}, {0, 7, 22, 0}, {1, 2, 12, 0}, {0, 6, 0, 0} };
-	LU(u);
+	LU(inputMatrix("matrix.txt"), inputVector("vector.txt"));
 	//vector<double> x = { 5, 10, 15, 20, 25, 30 };
 	//vector<double> y = { 5, 15, 10, 3, 20, 7 };
 	//linearSpline(x, y);
