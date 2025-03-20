@@ -4,43 +4,42 @@
 
 using namespace std;
 
-vector<vector<double>> inputMatrix(string fileName) {
+vector<double> input(string fileName) {
 	ifstream file(fileName);
 
-	int rows, cols;
-	file >> rows;
-	file >> cols;
+	double h;
+	file >> h;
 
-	vector<vector<double>> matrix(rows, vector<double>(cols));
+	double a, b;
+	file >> a >> b;
 
-	for (int i = 0; i < rows; i++) {
-		for (int j = 0; j < cols; j++) {
-			file >> matrix[i][j];
-		}
+	vector<double> x;
+
+	while (a <= b) {
+		x.push_back(a);
+		a += h;
 	}
-	return matrix;
+
+	return x;
 }
 
-vector<double> inputVector(string fileName) {
-	ifstream file(fileName);
+void output(string fileName, vector<double> coef) {
+	ofstream file(fileName);
 
-	int size;
-	file >> size;
-
-	vector<double> B(size);
-
-	for (int i = 0; i < size; i++) {
-		file >> B[i];
+	for (int i = 0; i < coef.size(); i++) {
+		file << coef[i] << " ";
 	}
-	return B;
 }
 
 double function(double x) {
-	//return x;
-	return x * x;
+	 return 3;
+	// return 2 * x;
+	// return x * x;
+	// return x * x * x;
+	// return sin(x);
 }
 
-void LU(vector<vector<double>> u, vector<double> b) {
+ vector<double> LU(vector<vector<double>> u, vector<double> b) {
 	int nRows = u.size();
 	int nCols = u[0].size();
 	// создаем матрицу L имеющую только 2 диагонали
@@ -76,28 +75,8 @@ void LU(vector<vector<double>> u, vector<double> b) {
 	for (int i = nRows - 4; i > -1; i--) {
 		x[i] = (y[i] - u[i][2] * x[i + 1] - u[i][3] * x[i + 2] - u[i][4] * x[i + 3]) / u[i][1];
 	}
-	//cout << "U" << endl;
-	//for (int i = 0; i < nRows; i++) {
-	//	for (int j = 0; j < nCols; j++) {
-	//		cout << u[i][j] << " ";
-	//	}
-	//	cout << endl;
-	//}
-	//cout << endl << "L" << endl;
-	//for (int i = 0; i < nRows; i++) {
-	//	for (int j = 0; j < 2; j++) {
-	//		cout << l[i][j] << " ";
-	//	}
-	//	cout << endl;
-	//}
-	//cout << endl << "y" << endl;
-	//for (int i = 0; i < nRows; i++) {
-	//	cout << y[i] << " ";
-	//}
-	//cout << endl << "x" << endl;
-	//for (int i = 0; i < nRows; i++) {
-	//	cout << x[i] << " ";
-	//}
+	output("qSpline.txt", x);
+	return x;
 }
 
 void linearSpline(vector<double> x, vector<double> y) {
@@ -108,12 +87,12 @@ void linearSpline(vector<double> x, vector<double> y) {
 		a.push_back((y[i + 1] - y[i]) / (x[i + 1] - x[i]));
 		b.push_back(y[i] - a[i] * x[i]);
 
-		cout << "a: " << a[i] << "\tb: " << b[i] << endl;
-		cout << "Линейная функция: " << a[i] << "x + " << b[i] << endl << endl;
+		output("lSpline_a.txt", a);
+		output("lSpline_b.txt", b);
 	}
 }
 
-void quadraticSpline(vector<double> x) {
+void quadraticSpline(vector<double> x, vector<double> y) {
 	int n = 3 * x.size() - 3;
 
 	// коэффициенты сплайна
@@ -131,18 +110,14 @@ void quadraticSpline(vector<double> x) {
 			B[i] = 0;
 		}
 		else {
-			B[i] = function(x[i - delta]);
-			B[i + 1] = function(x[i + 1 - delta]);
+			B[i] = y[i - delta];
+			B[i + 1] = y[i + 1 - delta];
 			i++;
 			delta += 2;
 		}
 	}
-	// граничные условия - вторая производная в x[n] равна значению функции в этой точке
-	B[n - 1] = function(x[x.size() - 1]);
-	//cout << "B" << endl;
-	//for (int i = 0; i < n; i++) {
-	//	cout << B[i] << " ";
-	//}
+	// граничные условия - вторая производная в x[n] равна 0
+	B[n - 1] = 0;
 
 	// составляем ленточную матрицу
 	vector<vector<double>> A(n, vector<double>(5));
@@ -164,26 +139,27 @@ void quadraticSpline(vector<double> x) {
 			i++;
 		}
 	}
-	// граничные условия - вторая производная в x[n] равна значению функции в этой точке
+	// граничные условия - вторая производная в x[n] равна 0
 	A[n - 1][1] = 2;
-
-	//cout << "A" << endl;
-	//for (int i = 0; i < n; i++) {
-	//	for (int j = 0; j < 5; j++) {
-	//		cout << A[i][j] << " ";
-	//	}
-	//	cout << endl;
-	//}
 
 	LU(A, B);
 }
 
+void err(vector<double> coef, vector<double> x) {
+
+}
+
 int main() {
 	setlocale(LC_ALL, "Russian");
-	//LU(inputMatrix("matrix.txt"), inputVector("vector.txt"));
-	vector<double> x = { 0, 1, 2, 3 };
-	quadraticSpline(x);
-	//vector<double> y = { 5, 15, 10, 3, 20, 7 };
-	//linearSpline(x, y);
+	vector<double> x = input("X.txt");
+	int n = x.size();
+	vector<double> y;
+	for (int i = 0; i < n; i++) {
+		y.push_back(function(x[i]));
+	}
+	quadraticSpline(x, y);
+	linearSpline(x, y);
+	vector<double> coef(3 * n - 3);
+	err(coef, x);
 	return 0;
 }
