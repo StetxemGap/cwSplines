@@ -32,11 +32,63 @@ void output(string fileName, vector<double> coef) {
 }
 
 double function(double x) {
-	 return 3;
+	// return 3;
 	// return 2 * x;
 	// return x * x;
-	// return x * x * x;
+	 return x * x * x + 2 * x + 6;
 	// return sin(x);
+}
+
+void err(vector<double> coef, vector<double> x, vector<double> y, string filename, bool isLinear) {
+	ofstream file(filename);
+	const double EPS = 1e-10;
+	double pogr;
+	double err;
+
+	switch (isLinear)
+	{
+	case true:
+		for (int i = 0, j = 0; i < x.size() - 1; i++, j++) {
+			double a = x[i], b = x[i + 1];
+			double h = (b - a) / 5;
+			file << "Отрезок: (" << a << ", " << b << ")\n\n";
+			//a += h;
+			double sum = 0;
+			int k = 0;
+			while (a <= b + EPS) {
+				pogr = abs(function(a) - (coef[j] * a + coef[j + 1]));
+				file << " Точка: " << a << "   Погрешность: " << pogr << endl;
+				sum += pogr * pogr;
+				a += h;
+				k++;
+			}
+			j++;
+			err = sqrt(sum / k);
+			file << "\nСреднеквадратичное отклонение: " << err << "\n\n";
+		}
+		break;
+	case false:
+		for (int i = 0, j = 0; i < x.size() - 1; i++, j++) {
+			double a = x[i], b = x[i + 1];
+			double h = (b - a) / 5;
+			file << "Отрезок: (" << a << ", " << b << ")\n\n";
+			double sum = 0;
+			int k = 0;
+			while (a <= b + EPS) {
+				pogr = abs(function(a) - (coef[j] + coef[j + 1] * a + coef[j + 2] * a * a));
+				file << " Точка: " << a << "   Погрешность: " << pogr << endl;
+				sum += pogr * pogr;
+				a += h;
+				k++;
+			}
+			j += 2;
+			err = sqrt(sum / k);
+			file << "\nСреднеквадратичное отклонение: " << err << "\n\n";
+		}
+		break;
+	default:
+		break;
+	}
 }
 
  vector<double> LU(vector<vector<double>> u, vector<double> b) {
@@ -80,25 +132,19 @@ double function(double x) {
 }
 
 void linearSpline(vector<double> x, vector<double> y) {
-	vector<double> a; // угловой коэффициент
-	vector<double> b; // свободный член
-
-	for (int i = 0; i < x.size() - 1; i++) {
-		a.push_back((y[i + 1] - y[i]) / (x[i + 1] - x[i]));
-		b.push_back(y[i] - a[i] * x[i]);
-
-		output("lSpline_a.txt", a);
-		output("lSpline_b.txt", b);
+	vector<double> coefs(2 * x.size() - 2);
+	for (int i = 0, j = 0; i < 2 * x.size() - 2; i++, j++) {
+		coefs[i] = ((y[j + 1] - y[j]) / (x[j + 1] - x[j]));
+		coefs[i + 1] = (y[j] - coefs[i] * x[j]);
+		i++;
 	}
+
+	output("lSpline.txt", coefs);
+	err(coefs, x, y, "lErr.txt", true);
 }
 
 void quadraticSpline(vector<double> x, vector<double> y) {
 	int n = 3 * x.size() - 3;
-
-	// коэффициенты сплайна
-	vector<double> a(n/3);
-	vector<double> b(n/3);
-	vector<double> c(n/3);
 
 	// вектор правой части
 	vector<double> B(n);
@@ -142,11 +188,26 @@ void quadraticSpline(vector<double> x, vector<double> y) {
 	// граничные условия - вторая производная в x[n] равна 0
 	A[n - 1][1] = 2;
 
-	LU(A, B);
+	err(LU(A, B), x, y, "qErr.txt", false);
 }
 
-void err(vector<double> coef, vector<double> x) {
+void quadraticSplinev2(vector<double> x, vector<double> y) {
+	int n = x.size();
 
+	vector<double> coef(3 * n - 3);
+	vector<double> beta(n);
+
+	beta[0] = (y[1] - y[0]) / (x[1] - x[0]);
+
+	for (int i = 0, j = 0; i < x.size() - 1; i++, j++) {
+		coef[j + 2] = (y[i + 1] - y[i]) / (x[i + 1] - x[i]) * (x[i + 1] - x[i]) - beta[i] / (x[i + 1] - x[i]);
+		coef[j + 1] = beta[i] - 2 * coef[j + 2] * x[i];
+		coef[j] = y[i] - beta[i] * x[i] + coef[j + 2] * x[i] * x[i];
+		beta[i + 1] = coef[j + 1] + 2 * coef[j + 2] * x[i + 1];
+		j += 2;
+	}
+	output("qSplinev2.txt", coef);
+	err(coef, x, y, "qErrv2.txt", false);
 }
 
 int main() {
@@ -159,7 +220,6 @@ int main() {
 	}
 	quadraticSpline(x, y);
 	linearSpline(x, y);
-	vector<double> coef(3 * n - 3);
-	err(coef, x);
+	quadraticSplinev2(x, y);
 	return 0;
 }
