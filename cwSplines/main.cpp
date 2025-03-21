@@ -35,8 +35,9 @@ double function(double x) {
 	// return 3;
 	// return 2 * x;
 	// return x * x;
-	 return x * x * x + 2 * x + 6;
+	// return x * x * x + 2 * x + 6;
 	// return sin(x);
+	 return exp(x);
 }
 
 void err(vector<double> coef, vector<double> x, vector<double> y, string filename, bool isLinear) {
@@ -51,39 +52,40 @@ void err(vector<double> coef, vector<double> x, vector<double> y, string filenam
 		for (int i = 0, j = 0; i < x.size() - 1; i++, j++) {
 			double a = x[i], b = x[i + 1];
 			double h = (b - a) / 5;
-			file << "Отрезок: (" << a << ", " << b << ")\n\n";
-			//a += h;
+			file << "Отрезок: (" << defaultfloat << a << ", " << b << ")\n\n";
+			a += h;
 			double sum = 0;
 			int k = 0;
-			while (a <= b + EPS) {
+			while (a < b - EPS) {
 				pogr = abs(function(a) - (coef[j] * a + coef[j + 1]));
-				file << " Точка: " << a << "   Погрешность: " << pogr << endl;
+				file << " Точка: " << defaultfloat << a << "   Погрешность: " << scientific << pogr << endl;
 				sum += pogr * pogr;
 				a += h;
 				k++;
 			}
 			j++;
 			err = sqrt(sum / k);
-			file << "\nСреднеквадратичное отклонение: " << err << "\n\n";
+			file << "\nСреднеквадратичное отклонение: " << scientific << err << "\n\n";
 		}
 		break;
 	case false:
 		for (int i = 0, j = 0; i < x.size() - 1; i++, j++) {
 			double a = x[i], b = x[i + 1];
 			double h = (b - a) / 5;
-			file << "Отрезок: (" << a << ", " << b << ")\n\n";
+			file << "Отрезок: (" << defaultfloat << a << ", " << b << ")\n\n";
+			a += h;
 			double sum = 0;
 			int k = 0;
-			while (a <= b + EPS) {
+			while (a < b - EPS) {
 				pogr = abs(function(a) - (coef[j] + coef[j + 1] * a + coef[j + 2] * a * a));
-				file << " Точка: " << a << "   Погрешность: " << pogr << endl;
+				file << " Точка: " << defaultfloat << a << "   Погрешность: " << scientific << pogr << endl;
 				sum += pogr * pogr;
 				a += h;
 				k++;
 			}
 			j += 2;
 			err = sqrt(sum / k);
-			file << "\nСреднеквадратичное отклонение: " << err << "\n\n";
+			file << "\nСреднеквадратичное отклонение: " << scientific << err << "\n\n";
 		}
 		break;
 	default:
@@ -200,7 +202,7 @@ void quadraticSplinev2(vector<double> x, vector<double> y) {
 	beta[0] = (y[1] - y[0]) / (x[1] - x[0]);
 
 	for (int i = 0, j = 0; i < x.size() - 1; i++, j++) {
-		coef[j + 2] = (y[i + 1] - y[i]) / (x[i + 1] - x[i]) * (x[i + 1] - x[i]) - beta[i] / (x[i + 1] - x[i]);
+		coef[j + 2] = (y[i + 1] - y[i]) / ((x[i + 1] - x[i]) * (x[i + 1] - x[i])) - beta[i] / (x[i + 1] - x[i]);
 		coef[j + 1] = beta[i] - 2 * coef[j + 2] * x[i];
 		coef[j] = y[i] - beta[i] * x[i] + coef[j + 2] * x[i] * x[i];
 		beta[i + 1] = coef[j + 1] + 2 * coef[j + 2] * x[i + 1];
@@ -214,6 +216,7 @@ int main() {
 	setlocale(LC_ALL, "Russian");
 	vector<double> x = input("X.txt");
 	int n = x.size();
+	//vector<double> y = {5, 15, 10, 3, 20, 7};
 	vector<double> y;
 	for (int i = 0; i < n; i++) {
 		y.push_back(function(x[i]));
